@@ -1,12 +1,33 @@
 using Microsoft.EntityFrameworkCore;
 using SalesDashboard.Api.Data;
+using SalesDashboard.Api.Features.Dashboard;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
-builder.Services.AddDbContext<SalesDbContext>(o => o
-    .UseNpgsql(builder.Configuration.GetConnectionString("Default"))
-    .UseSnakeCaseNamingConvention());
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
+
+builder.Services.AddDbContext<SalesDbContext>(o =>
+{
+    o.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
+        .UseSnakeCaseNamingConvention();
+
+    if (builder.Environment.IsDevelopment())
+        o.EnableSensitiveDataLogging();
+});
+
+var timeZoneId = builder.Configuration["Business:TimeZone"] ?? "Europe/Moscow";
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton(sp => new PeriodResolver(
+    sp.GetRequiredService<TimeProvider>(),
+    TimeZoneInfo.FindSystemTimeZoneById(timeZoneId)));
+builder.Services.AddScoped<DashboardService>();
 
 var app = builder.Build();
 
@@ -21,6 +42,10 @@ await using (var scope = app.Services.CreateAsyncScope())
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 
+app.UseSwagger();
+app.UseSwaggerUI();
+
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
+app.MapDashboardEndpoints();
 
 app.Run();

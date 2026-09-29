@@ -7,6 +7,7 @@
 
 ### 2
 Да, согласен, минимальный stub сделаем сразу. Clean Architecture не нужен в чистом виде, но на счет DI я не уверен, в .NET это стандарт. CQRS не будет.
+Поясни почему выбран именно Vite? TanStack Query тоже, за что отвечает и какие есть варианты?
 
 ### 3
 
@@ -17,10 +18,42 @@ volumes: pgdata:
 
 ### 4
 
-
+Идем к этапу бд.
 
 ### 5
+
+Все тестовые запросы успешны, EF файл миграций посмотрел, идем далее к этапу контрактов API.
+
 ### 6
+
+Перед след этапом разберемся с моими вопросами:
+Почему папка именуется FEATURES(функции)? Довольно общее название для всего подряд, почему просто не dashboards?
+Допущена ошибка в record PeriodDto, я переименовал метод From в фабричный Create из-за конфликта имен с полем From.
+Оптимален ли этот кусок запроса:
+.Select(g => new
+{
+    IsCurrent = g.Key,
+    Revenue = g.Sum(s => s.Status == SaleStatus.Paid ? s.TotalAmount : 0m),
+    Cost = g.Sum(s => s.Status == SaleStatus.Paid ? s.TotalCost : 0m),
+    PaidCount = g.Sum(s => s.Status == SaleStatus.Paid ? 1 : 0),
+    RefundedCount = g.Sum(s => s.Status == SaleStatus.Refunded ? 1 : 0),
+    RefundedAmount = g.Sum(s => s.Status == SaleStatus.Refunded ? s.TotalAmount : 0m),
+    CancelledCount = g.Sum(s => s.Status == SaleStatus.Cancelled ? 1 : 0),
+})
+Не перебор ли агрегатных функций?
+
+Проверка SQL и запросы на эндпоинты, я запустил локально бек, куда он будет класть логи? Где мы отдельно настраивали логгирование? Или ты намекаешь на логи запросов в самом PG?
+
 ### 7
+
+Тогда оставим Features, пусть будет такое разделение.
+Приведи мне полный GetSummaryAsync, не нужно давать несколько исправленных кусков.
+После правок уже проверим EF.
+
 ### 8
+
+
+
 ### 9
+
+
