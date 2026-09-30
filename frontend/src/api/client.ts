@@ -20,14 +20,14 @@ export class ApiError extends Error {
 type QueryParams = Record<string, string | number | undefined>
 
 export async function apiGet<T>(path: string, params: QueryParams, signal?: AbortSignal): Promise<T> {
-  const qs = new URLSearchParams()
+  const url = new URL(`/api${path}`, window.location.origin)
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== '') qs.set(key, String(value))
+    if (value !== undefined && value !== '') url.searchParams.set(key, String(value))
   }
 
   let response: Response
   try {
-    response = await fetch(`/api${path}?${qs}`, { signal, headers: { Accept: 'application/json' } })
+    response = await fetch(url, { signal, headers: { Accept: 'application/json' } })
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') throw e // отмена — не ошибка
     throw new ApiError(0, 'Сервер недоступен. Проверьте соединение.')
