@@ -32,12 +32,18 @@ builder.Services.AddScoped<DashboardService>();
 
 var app = builder.Build();
 
-// Миграции + seed при старте (требование ТЗ: запуск одной командой)
 await using (var scope = app.Services.CreateAsyncScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<SalesDbContext>();
+    var services = scope.ServiceProvider;
+    var db = services.GetRequiredService<SalesDbContext>();
+    var periods = services.GetRequiredService<PeriodResolver>();
+    var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger("Seed");
+
+    // Seed:AnchorDate фиксирует «сегодня» генератора → идентичные данные в любой день
+    var anchor = app.Configuration.GetValue<DateOnly?>("Seed:AnchorDate") ?? periods.Today();
+
     await db.Database.MigrateAsync();
-    await DbSeeder.SeedAsync(db);
+    await DbSeeder.SeedAsync(db, anchor, periods.TimeZone, logger);
 }
 
 app.UseExceptionHandler();
