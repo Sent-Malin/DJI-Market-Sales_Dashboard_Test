@@ -82,6 +82,9 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    --series-revenue: oklch(0.546 0.245 262.881); /* blue-600 */
+    --series-profit: oklch(0.696 0.17 162.48);    /* emerald-500 */
+    --series-sales: oklch(0.623 0.214 259.815);   /* blue-500 */
 }
 
 .dark {

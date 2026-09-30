@@ -1,51 +1,50 @@
+import { Info } from 'lucide-react'
 import { useSummary } from '@/api/queries'
-import { Panel } from '@/components/Panel'
-import { Button } from '@/components/ui/button'
+import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown'
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
+import { KpiCards } from '@/components/dashboard/KpiCards'
+import { ManagerRating } from '@/components/dashboard/ManagerRating'
+import { RecentSales } from '@/components/dashboard/RecentSales'
+import { TopProducts } from '@/components/dashboard/TopProducts'
+import { TrendChart } from '@/components/dashboard/TrendChart'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { usePeriod } from '@/hooks/useDashboardParams'
-import { formatDelta, formatMoney, formatRange } from '@/lib/format'
-import { PRESETS } from '@/lib/period'
 
 export default function App() {
   const { period, setPeriod } = usePeriod()
   const summary = useSummary(period)
+  const s = summary.data
+  const noSales = s?.salesCount.value === 0
 
   return (
-    <div className="min-h-screen bg-muted/40 p-8">
-      <div className="mx-auto max-w-[1400px] space-y-6">
-        <div className="flex gap-2">
-          {PRESETS.map((p) => (
-            <Button
-              key={p.value}
-              size="sm"
-              variant={period.period === p.value ? 'default' : 'outline'}
-              onClick={() => setPeriod({ period: p.value })}
-            >
-              {p.label}
-            </Button>
-          ))}
-        </div>
+    <TooltipProvider delayDuration={200}>
+      <div className="min-h-screen bg-muted/40">
+        <DashboardHeader period={period} onPeriodChange={setPeriod} />
 
-        <Panel
-          title="Выручка — проверка связки"
-          description={summary.data && formatRange(summary.data.period.from, summary.data.period.to)}
-          isLoading={summary.isLoading}
-          isFetching={summary.isFetching}
-          isStale={summary.isPlaceholderData}
-          error={summary.error}
-          onRetry={() => summary.refetch()}
-          isEmpty={summary.data?.salesCount.value === 0}
-          className="max-w-sm"
-        >
-          <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-semibold tabular-nums">
-              {formatMoney(summary.data?.revenue.value)}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              {formatDelta(summary.data?.revenue.change)}
-            </span>
+        <main className="mx-auto max-w-[1400px] space-y-6 px-8 py-6">
+          {noSales && s && (
+            <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <Info className="size-4 shrink-0" />
+              <span>
+                За выбранный период нет оплаченных продаж
+                {(s.cancelledCount > 0 || s.refunds.count > 0) &&
+                  ` (отмен: ${s.cancelledCount}, возвратов: ${s.refunds.count})`}
+                . Попробуйте выбрать более длинный период.
+              </span>
+            </div>
+          )}
+
+          <KpiCards period={period} />
+
+          <div className="grid grid-cols-12 gap-6">
+            <TrendChart period={period} className="col-span-8" />
+            <CategoryBreakdown period={period} className="col-span-4" />
+            <ManagerRating period={period} className="col-span-8 min-w-0" />
+            <TopProducts period={period} className="col-span-4" />
+            <RecentSales period={period} className="col-span-12" />
           </div>
-        </Panel>
+        </main>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }

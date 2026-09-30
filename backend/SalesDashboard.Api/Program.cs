@@ -23,6 +23,7 @@ builder.Services.AddDbContext<SalesDbContext>(o =>
 });
 
 var timeZoneId = builder.Configuration["Business:TimeZone"] ?? "Europe/Moscow";
+builder.Services.AddHealthChecks().AddDbContextCheck<SalesDbContext>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(sp => new PeriodResolver(
     sp.GetRequiredService<TimeProvider>(),
@@ -45,7 +46,7 @@ app.UseStatusCodePages();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
+app.MapHealthChecks("/api/health");
 app.MapDashboardEndpoints();
 
 app.Run();

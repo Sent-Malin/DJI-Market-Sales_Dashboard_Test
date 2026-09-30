@@ -1,4 +1,6 @@
-﻿namespace SalesDashboard.Api.Features.Dashboard;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+
+namespace SalesDashboard.Api.Features.Dashboard;
 
 public sealed record PeriodQuery(string? Period, DateOnly? From, DateOnly? To);
 
@@ -48,7 +50,7 @@ public static class DashboardEndpoints
             });
     }
 
-    private static async Task<IResult> Handle<T>(
+    private static async Task<Results<Ok<T>, ValidationProblem>> Handle<T>(
         PeriodQuery q, PeriodResolver periods,
         Dictionary<string, string[]> errors,
         Func<DateRange, Task<T>> action)
@@ -56,9 +58,9 @@ public static class DashboardEndpoints
         periods.TryResolve(q.Period, q.From, q.To, errors, out var range);
 
         if (errors.Count > 0 || range is null)
-            return Results.ValidationProblem(errors);
+            return TypedResults.ValidationProblem(errors);
 
-        return Results.Ok(await action(range));
+        return TypedResults.Ok(await action(range));
     }
 
     private static RatingMetric ParseMetric(string? value, Dictionary<string, string[]> errors)
